@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.DS_Store
+
+# 自检脚本落下的运行状态，不是源码
+data/
