@@ -47,7 +47,7 @@ class FocusStreamPlugin(BasePlugin):
         "随时可用 /打开聚焦、/关闭聚焦、/聚焦 手动接管；"
         "聚焦状态可持久化、可注入上下文让她自己知道，并附带只读的 get_focus_state 工具"
     )
-    plugin_version: str = "1.0.0"
+    plugin_version: str = "1.0.1"
     configs: list[type] = [FocusStreamConfig]
 
     def get_components(self) -> list[type]:

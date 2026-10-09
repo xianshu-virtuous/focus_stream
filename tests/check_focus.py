@@ -168,7 +168,7 @@ def main() -> int:  # noqa: C901 - 自检脚本，长一点无妨
 
     # ── 1. 真实框架导入冒烟 ────────────────────────────────────────────────
     try:
-        from focus_stream import focus, inject, rules
+        from focus_stream import focus, inject, reply as reply_mod, rules
         from focus_stream.commands import (
             ALL_COMMANDS,
             FocusCommand,
@@ -631,16 +631,48 @@ def main() -> int:  # noqa: C901 - 自检脚本，长一点无妨
         and FocusCommand.match(["聚焦"]) == 1
         and FocusOnCommand.match(["在吗"]) == 0,
     )
+    check(
+        "命令认得出 /流聚焦 与连写写法",
+        FocusCommand.match(["流聚焦"]) == 1
+        and FocusCommand.match(["流聚焦", "开启"]) == 1
+        and FocusCommand.match(["流聚焦", "关闭"]) == 1
+        and FocusCommand.match(["流聚焦开启"]) == 1
+        and FocusCommand.match(["流聚焦关闭"]) == 1
+        and FocusCommand.match(["聚焦状态"]) == 1
+        and FocusCommand.match(["focusing"]) == 0
+        and FocusCommand.match(["聚焦了吗"]) == 0,
+    )
+
+    # 连写时框架切不出参数，命令要能从原始消息里把后缀抠出来
+    inline_msg = FakeMessage(
+        stream_id="s_inline", chat_type="private", sender_id="1001", text="/流聚焦开启"
+    )
+    inline_cmd = FocusCommand(plugin=None, stream_id="s_inline", message=inline_msg)  # type: ignore[arg-type]
+    check(
+        "连写时能从原始消息解析出后缀",
+        inline_cmd._suffix_from_message() == "开启",
+        repr(inline_cmd._suffix_from_message()),
+    )
+    spaced_msg = FakeMessage(
+        stream_id="s_inline", chat_type="private", sender_id="1001", text="/聚焦 关闭"
+    )
+    spaced_cmd = FocusCommand(plugin=None, stream_id="s_inline", message=spaced_msg)  # type: ignore[arg-type]
+    check(
+        "带空格的写法也解析出后缀",
+        spaced_cmd._suffix_from_message() == "关闭",
+        repr(spaced_cmd._suffix_from_message()),
+    )
 
     from focus_stream.commands import focus_command as fc
 
     sent: list[str] = []
 
-    async def fake_send(text: str, stream_id: str = "") -> None:
+    async def fake_reply(text: str, stream_id: str = "", *, hidden: bool = True) -> bool:
         sent.append(text)
+        return True
 
-    real_send = fc.send_text
-    fc.send_text = fake_send  # type: ignore[assignment]
+    real_reply = fc.send_reply
+    fc.send_reply = fake_reply  # type: ignore[assignment]
     try:
         asyncio.run(scenario_fresh())
         focus.configure(make_settings(restore_after_restart=False))
@@ -703,7 +735,7 @@ def main() -> int:  # noqa: C901 - 自检脚本，长一点无妨
         asyncio.run(FocusCommand(plugin=None, stream_id="s_private", message=master_msg).execute("瞎写"))  # type: ignore[arg-type]
         check("认不出的参数给用法提示", bool(sent) and "用法" in sent[-1])
     finally:
-        fc.send_text = real_send  # type: ignore[assignment]
+        fc.send_reply = real_reply  # type: ignore[assignment]
 
     # ── 10. 工具 ──────────────────────────────────────────────────────────
     asyncio.run(scenario_fresh())
@@ -810,6 +842,11 @@ def main() -> int:  # noqa: C901 - 自检脚本，长一点无妨
         "默认配置：私聊自动 + 群里要呼唤 + 用框架主人列表",
         built.private_auto and built.group_requires_call and built.use_owner_list,
         f"whitelist={built.whitelist_entries()} owner_list={built.use_owner_list}",
+    )
+    check("默认回执对她隐身", built.hidden_reply is True)
+    check(
+        "隐身回执在拿不到流/适配器时安全失败（不抛异常）",
+        asyncio.run(reply_mod.send_hidden("测试回执", "no_such_stream")) is False,
     )
 
     print("-" * 72)

@@ -63,6 +63,9 @@ class Settings:
     # [tools]
     tools_enabled: bool = True
 
+    # [reply]
+    hidden_reply: bool = True
+
     def whitelist_entries(self) -> list[str]:
         """本插件自带的名单条目（已去空、去重，保持顺序）。"""
 
@@ -116,6 +119,7 @@ def build_settings(config: Any) -> Settings:
         inject_text=str(inject.text or ""),
         inject_guard=str(inject.guard or ""),
         tools_enabled=bool(tools.enabled),
+        hidden_reply=bool(config.reply.hidden),
     )
 
 

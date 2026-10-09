@@ -341,7 +341,7 @@ def status_text() -> str:
         head,
         f"规则：{rule_private}；{rule_group}",
         f"谁能切：{who}",
-        "开关：/打开聚焦、/关闭聚焦、/聚焦（看状态）、/聚焦 这里（就地切过来）",
+        "开关：/流聚焦 开启、/流聚焦 关闭、/流聚焦（看状态）、/聚焦 这里（就地切过来）",
     ]
     return "\n".join(lines)
 
@@ -354,6 +354,7 @@ def apply_config_text(settings: rules.Settings) -> str:
         f"｜群里需呼唤={'开' if settings.group_requires_call else '关'}"
         f"｜白名单={len(settings.whitelist_entries())}人"
         f"｜状态注入={'开' if settings.inject_enabled else '关'}"
+        f"｜回执隐身={'开' if settings.hidden_reply else '关'}"
     )
 
 

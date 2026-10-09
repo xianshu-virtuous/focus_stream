@@ -152,6 +152,27 @@ class ToolsSection(SectionBase):
     )
 
 
+class ReplySection(SectionBase):
+    """命令回执怎么发。
+
+    默认**隐身**：回执照常发进聊天（你看得到），但不写进聊天流历史，
+    所以她下一轮的上下文里没有这句话——不会知道刚才有人在拨开关，
+    也不会把回执当成自己说过的话接下去。
+
+    框架的 ``send_api`` 只提供「发就记」这一条路，所以隐身通道是照
+    ``MessageSender`` 的流程自己走到「适配器已发送」为止（见 ``reply.py``）；
+    任何一步不符合预期都会自动退回普通发送，保证回执发得出去。
+    """
+
+    hidden: bool = Field(
+        default=True,
+        description=(
+            "回执是否对她隐身（默认开）。\n"
+            "关掉＝走框架标准发送，回执会留在她的上下文里——排查命令问题时有用。"
+        ),
+    )
+
+
 class FocusStreamConfig(BaseConfig):
     """focus_stream 插件配置模型。"""
 
@@ -186,4 +207,5 @@ class FocusStreamConfig(BaseConfig):
     whitelist: WhitelistSection = Field(default_factory=WhitelistSection)
     focus: FocusSection = Field(default_factory=FocusSection)
     inject: InjectSection = Field(default_factory=InjectSection)
+    reply: ReplySection = Field(default_factory=ReplySection)
     tools: ToolsSection = Field(default_factory=ToolsSection)
